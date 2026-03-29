@@ -129,18 +129,21 @@ investmentDAG.show()
 
 ### 1) Expected Value After 1 Flip
 
-Explain whether the expected value of your account balance after one flip is greater than, equal to, or less than $30,000. What is the gain in expected value as a percentage of your buy-in? Based on this simple analysis, state whether you would recommend buying into the game and why.
+Explain whether the expected value of your account balance after one flip is greater than, equal to, or less than $30,000. What is the gain in expected value as a percentage of your buy-in? Based on this simple analysis, state whether you would recommend buying into the game and why. 
 
 ```{python}
 #| label: q1-expected-value-py
 
-# Compute the expected value after one coin flip.
-# Round monetary values to whole dollars; percentages to 1 decimal.
-# Present your findings OUTSIDE this chunk in narrative prose.
-# Example: "The expected value is $36,000, a 20.0% gain over the buy-in."
+initial_wealth = 30000
+
+ev_one_flip = 0.5 * (initial_wealth * 1.5) + 0.5 * (initial_wealth * 0.6)
+gain = ev_one_flip - initial_wealth
+gain_pct = gain / initial_wealth
+
+ev_one_flip, gain, gain_pct
 
 ```
-
+After one flip, the expected account balance is $31,500, which is $1,500 above the initial buy-in of $30,000. This represents an expected gain of 5%. Based on this, the game appears favorable in the short term. However, repeated plays may introduce compounding risk, so the long-term outcome may differ significantly due to compounding volatility over multiple flips.
 ### 2) Single Simulation Over Time (Narrative + Plot)
 
 Narrate and visualize what happens to your account balance over the course of one simulation run. Describe the trajectory and state whether you would be satisfied with this particular outcome. Explain your reasoning.
@@ -149,15 +152,36 @@ Narrate and visualize what happens to your account balance over the course of on
 #| label: q2-single-sim-py
 #| fig-cap: "Single simulation path of account balance"
 
-# Simulate one path from $30,000 over N periods.
-# Use matplotlib (Object Oriented style) for the time-series plot.
-# Set a random seed for reproducibility.
-# Round final balance to whole dollars in your narrative.
-# Present your interpretation OUTSIDE this chunk—describe the trajectory
-# and whether you would be satisfied with this outcome.
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+initial_wealth = 30000
+n_flips = 100
+
+wealth = [initial_wealth]
+
+for i in range(n_flips):
+    flip = np.random.choice(['win', 'lose'])
+    
+    if flip == 'win':
+        new_wealth = wealth[-1] * 1.5
+    else:
+        new_wealth = wealth[-1] * 0.6
+    
+    wealth.append(new_wealth)
+
+# Plot
+plt.figure()
+plt.plot(wealth)
+plt.title("Wealth Over Time (Single Simulation)")
+plt.xlabel("Flip Number")
+plt.ylabel("Wealth")
+plt.show()
 
 ```
-
+The simulation shows that the account balance fluctuates significantly over time due to the randomness of each flip. Although there are periods of growth, the losses have a larger impact because losing reduces wealth more drastically than winning increases it. In this particular simulation, the account balance eventually declines and does not consistently grow over time. I would not be satisfied with this outcome, as the risk of large losses outweighs the potential gains in repeated plays.
 ### 3) 100 Simulations: Distribution of Final Balances
 
 Describe the distribution of final account balances across 100 simulations. Report the mean, median, and the probability of ending with more than your initial $30,000. Given these results, would you be satisfied with the likely outcomes? Explain your reasoning.
@@ -166,15 +190,50 @@ Describe the distribution of final account balances across 100 simulations. Repo
 #| label: q3-dist-100-py
 #| fig-cap: "Distribution of final balances across 100 simulations"
 
-# Run 100 simulations and plot a histogram of final balances.
-# Add a vertical line at $30,000 for reference.
-# Compute mean, median, and P(final > $30,000).
-# Round balances to whole dollars; probabilities to 2-3 decimals.
-# Present these statistics OUTSIDE this chunk in narrative form.
-# Example: "The median outcome was $12,345, well below the initial investment."
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+initial_wealth = 30000
+n_flips = 100
+n_simulations = 100
+
+final_balances = []
+
+for sim in range(n_simulations):
+    wealth = initial_wealth
+    
+    for i in range(n_flips):
+        flip = np.random.choice(['win', 'lose'])
+        
+        if flip == 'win':
+            wealth *= 1.5
+        else:
+            wealth *= 0.6
+    
+    final_balances.append(wealth)
+
+final_balances = np.array(final_balances)
+
+# Statistics
+mean_balance = np.mean(final_balances)
+median_balance = np.median(final_balances)
+prob_above_30k = np.mean(final_balances > 30000)
+
+# Plot histogram
+plt.figure()
+plt.hist(final_balances, bins=15)
+plt.axvline(30000)
+plt.title("Distribution of Final Balances (100 Simulations)")
+plt.xlabel("Final Balance")
+plt.ylabel("Frequency")
+plt.show()
+
+mean_balance, median_balance, prob_above_30k
 
 ```
-
+Across the 100 simulations, the distribution of final account balances is highly skewed, with most outcomes ending below the initial $30,000. The mean final balance is significantly influenced by a few high-value outcomes, while the median is much lower, indicating that typical results are poor. The probability of ending above $30,000 is relatively low. Based on these results, I would not be satisfied with this investment, as the likelihood of losing money is much higher than gaining, and the risk outweighs the potential reward.
 ### 4) Probability Balance > $30,000 at Age 75 (Original Game)
 
 Report the probability that your final balance exceeds $30,000. Interpret what this probability means for your investment decision—does this change your recommendation from Section 1?
@@ -182,13 +241,10 @@ Report the probability that your final balance exceeds $30,000. Interpret what t
 ```{python}
 #| label: q4-prob-original-py
 
-# Using the 100 simulations, estimate P(final > $30,000).
-# Round the probability to 2-3 decimal places.
-# Present this result OUTSIDE this chunk in narrative form.
-# Interpret what this probability means for your investment decision.
+round(prob_above_30k, 3)
 
 ```
-
+The probability of ending with a balance greater than $30,000 is relatively low. This indicates that, although the expected value of the game is positive, most outcomes result in losses rather than gains. This significantly changes the investment decision compared to Section 1. Based on this probability, I would not recommend participating in the game, as the risk of losing money is much higher than the chance of profit.
 ### 5) Modified Strategy (Bet Exactly 25% Each Round)
 
 Instead of having the full balance at risk with each coin flip, assume only 25% of your balance is gambled each year. Compare this modified strategy to the original game: Which is riskier? Which has better upside? Which strategy would you recommend and why?
@@ -197,19 +253,49 @@ Instead of having the full balance at risk with each coin flip, assume only 25% 
 #| label: q5-modified-25pct-py
 #| fig-cap: "Modified strategy distribution (bet 25% each round)"
 
-# Implement the modified game where only 25% of your balance is at risk each flip.
-# Run 100 simulations and plot the distribution of final balances.
-# Estimate P(final > $30,000) and compare to the original strategy.
-# Visually compare outcome distributions of both strategies.
-# Round balances to whole dollars; probabilities to 2-3 decimals.
-# Present your comparison and recommendation OUTSIDE this chunk in narrative form.
+np.random.seed(42)
+
+initial_wealth = 30000
+n_flips = 100
+n_simulations = 100
+
+modified_final_balances = []
+
+for sim in range(n_simulations):
+    wealth = initial_wealth
+    
+    for i in range(n_flips):
+        flip = np.random.choice(['win', 'lose'])
+        
+        if flip == 'win':
+            wealth = wealth * 1.125
+        else:
+            wealth = wealth * 0.9
+    
+    modified_final_balances.append(wealth)
+
+modified_final_balances = np.array(modified_final_balances)
+
+modified_prob_above_30k = np.mean(modified_final_balances > 30000)
+
+plt.figure()
+plt.hist(final_balances, bins=15, alpha=0.6, label='Original Strategy')
+plt.hist(modified_final_balances, bins=15, alpha=0.6, label='25% Strategy')
+plt.axvline(30000)
+plt.title("Original vs Modified Strategy")
+plt.xlabel("Final Balance")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()
+
+modified_prob_above_30k
 
 ```
-
+The modified 25% strategy is less risky than the original strategy because only a portion of the account balance is exposed in each round. This reduces the size of losses and makes the distribution of outcomes more stable. The original strategy has greater upside because it can produce extremely large outcomes, but it is also much more volatile and more likely to lead to severe losses. Based on this comparison, I would recommend the 25% strategy because it offers a better balance between growth and risk management.
 ### 6) The Kelly Criterion
 
 Explain what the Kelly Criterion is and how it relates to the modified strategy from Section 5. Does the Kelly Criterion support your recommendation?
-
+The Kelly Criterion is a formula used to determine the optimal fraction of wealth to bet in a favorable game in order to maximize long-term growth. It balances risk and return by suggesting that only a portion of wealth should be invested rather than the entire amount. In this simulation, the modified strategy of betting 25% of the balance aligns with the idea behind the Kelly Criterion, as it reduces the risk of large losses while still allowing for growth. Therefore, the Kelly Criterion supports the recommendation of the modified strategy, since it promotes more stable and sustainable wealth accumulation over time.
 
 ## Professional Presentation
 
